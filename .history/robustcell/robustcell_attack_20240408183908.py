@@ -166,19 +166,6 @@ class scRobustCell(object):
             sequence.remove(corr_acc_key)
             X_tr = Adv_img
         return Adv_img
-    
-    def ensemble_attack(self, X_tr, y_tr, model, sequence, eps=10, device = 'cuda', seed=2023, num_classes=10):
-        max_iter = len(sequence)
-        empty_tensor = torch.zeros_like(X_tr)
-        for item in sequence:
-            Adv_img = single_attack(X_tr, y_tr, model, attack = item, eps=eps, device = device, seed=seed, num_classes=num_classes)
-            with torch.no_grad():
-                y_pred = model(Adv_img)
-                _ , y_pred = torch.max(y_pred, 1)
-            result_dict = sklearn.metrics.classification_report(y_tr, y_pred, output_dict=True)
-            empty_tensor += Adv_img.to('cpu')
-            print("The attack method is", item)
-        return Adv_img / max_iter # take the average
 
     def scMaxGene(self, gene=None, scale=None):
         adata = self.adata

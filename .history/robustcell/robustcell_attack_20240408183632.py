@@ -1,15 +1,18 @@
 
 import scanpy as sc
+from deeprobust.image.attack.pgd import PGD
+from deeprobust.image.config import attack_params
+from deeprobust.image.utils import download_model
 import torch
-import sklearn.metrics
+import deeprobust.image.netmodels.resnet as resnet
+from torchvision import transforms,datasets
+from deeprobust.image.attack.fgsm import FGSM
 import numpy as np
-import pickle 
-import torch.nn as nn
+
 import scanpy as sc
 import torch
 import numpy as np
-from deeprobust.image.attack.pgd import PGD
-from deeprobust.image.attack.fgsm import FGSM
+from deeprobust.graph.data import Dataset
 from deeprobust.graph.defense import GCN
 from deeprobust.graph.global_attack import Metattack, DICE, Random, MinMax
 from deeprobust.graph.global_attack import DICE
@@ -78,38 +81,6 @@ def deepfool(input_data, model, num_classes=10, overshoot=0.02, max_iter=10):
 
     return r_tot, loop_i, label, k_i, pert_image
 
-
-def single_attack(X_tr, y_tr, model, attack, eps=10, device = 'cuda', seed=2023, num_classes=10):
-    if attack == 'PGD':
-        adversary = PGD(model, device)
-        Adv_img = adversary.generate(X_tr, y_tr, epsilon = eps)
-        return Adv_img.detach().to('cpu')
-    elif attack == 'FGSM':
-        adversary = FGSM(model, device)
-        Adv_img = adversary.generate(X_tr, y_tr, epsilon = eps)
-        return Adv_img.detach().to('cpu')
-    elif attack == 'Random':
-        np.random.seed(seed)
-        rand_data = torch.FloatTensor(np.asarray(np.random.rand(X_tr.shape[0], X_tr.shape[1])))
-        return X_tr + eps * rand_data
-    elif attack == 'Deepfool':
-        X_train = X_tr.to('cpu')
-        copyed_model = pickle.loads(pickle.dumps(model))
-        # These lines are used to remove the batch norm layers.
-        copyed_model.shared_layers[1] = nn.Identity()
-        copyed_model.shared_layers[5] = nn.Identity()
-        
-        pert_sample = []
-        # This may take long time.
-        for i in range(X_train.shape[0]):
-            r_tot, loop_i, label, k_i, pert_image = deepfool(X_tr[i:i+1,:], copyed_model.to('cpu'), num_classes=num_classes)
-            pert_sample.append(pert_image.view(-1).numpy())
-        X_test_pert = torch.FloatTensor(np.array(pert_sample))
-        return X_test_pert
-    else:
-        print("Please include correct attack methods")
-        raise Exception()
-
 class scRobustCell(object):
 
     def __init__(self, adata, device='cpu', eps = 1, seed=2023):
@@ -148,37 +119,7 @@ class scRobustCell(object):
         rand_data = torch.FloatTensor(np.asarray(np.random.rand(input_data.shape[0], input_data.shape[1])))
         return input_data + self.eps * rand_data
     
-    def composite_attack(self, X_tr, y_tr, model, sequence, eps=10, device = 'cuda', seed=2023, num_classes=10):
-        max_iter = len(sequence)
-        for _ in range(max_iter):
-            empth_dict = {}
-            empth_dict_value = {}
-            for item in sequence:
-                Adv_img = single_attack(X_tr, y_tr, model, attack = item, eps=eps, device = device, seed=seed, num_classes=num_classes)
-                with torch.no_grad():
-                    y_pred = model(Adv_img)
-                    _ , y_pred = torch.max(y_pred, 1)
-                result_dict = sklearn.metrics.classification_report(y_tr, y_pred, output_dict=True)
-                empth_dict[item] = result_dict['accuracy']
-                empth_dict_value[item] = Adv_img
-            corr_acc_key = min(empth_dict, key=empth_dict.get)
-            print("The attack method is", corr_acc_key )
-            sequence.remove(corr_acc_key)
-            X_tr = Adv_img
-        return Adv_img
-    
-    def ensemble_attack(self, X_tr, y_tr, model, sequence, eps=10, device = 'cuda', seed=2023, num_classes=10):
-        max_iter = len(sequence)
-        empty_tensor = torch.zeros_like(X_tr)
-        for item in sequence:
-            Adv_img = single_attack(X_tr, y_tr, model, attack = item, eps=eps, device = device, seed=seed, num_classes=num_classes)
-            with torch.no_grad():
-                y_pred = model(Adv_img)
-                _ , y_pred = torch.max(y_pred, 1)
-            result_dict = sklearn.metrics.classification_report(y_tr, y_pred, output_dict=True)
-            empty_tensor += Adv_img.to('cpu')
-            print("The attack method is", item)
-        return Adv_img / max_iter # take the average
+    def scEnsemble
 
     def scMaxGene(self, gene=None, scale=None):
         adata = self.adata
