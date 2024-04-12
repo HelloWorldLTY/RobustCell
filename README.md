@@ -45,10 +45,10 @@ cd Geneformer
 pip install .
 ```
 
-We also offer a conda environment to install the packages needed for running attack and defense methods, which is known as **robustcell_env.yml**. This environment can be installed by
+We also offer a conda environment to install the packages needed for running attack and defense methods, which is known as **robustcell.yml**. This environment can be installed by
 
 ```
-conda env create -f robustcell_env.yml
+conda env create -f robustcell.yml
 conda activate deeprobust_gcn
 ```
 
