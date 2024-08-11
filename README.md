@@ -25,6 +25,8 @@ In addition to train a neural-network-based classifier, the users are encouraged
 pip install lightning
 ```
 
+After finishing these steps, please refer **README_setup.md** to install robustcell.
+
 
 To run our evaluations based on [scGPT](https://github.com/bowang-lab/scGPT), the users need to install scGPT by
 
