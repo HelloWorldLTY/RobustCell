@@ -71,3 +71,14 @@ We offer examples of our experiments, shown in the folder **Experiments**, which
 We appreciate the great codes offered by Deeprobust and [Adversarial_training](https://github.com/MehrshadSD/robustness-interpretability)!
 
 # Citation
+
+```
+@article{liu2024robustcell,
+  title={RobustCell: A Model Attack-Defense Framework for Robust Transcriptomic Data Analysis},
+  author={Liu, Tianyu and Xiao, Yijia and Luo, Xiao and Zhao, Hongyu},
+  journal={bioRxiv},
+  pages={2024--11},
+  year={2024},
+  publisher={Cold Spring Harbor Laboratory}
+}
+```
